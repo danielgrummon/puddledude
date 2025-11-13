@@ -1,0 +1,46 @@
+name: Deploy Angular to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout repo
+      - uses: actions/checkout@v3
+
+      # 2. Setup Node.js
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      # 3. Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. Build Angular browser bundle
+      - name: Build Angular app
+        run: ng run puddledude:build:production --output-path docs --base-href /
+
+      # 5. Move browser files to docs root (if needed)
+      - name: Move browser build files
+        run: |
+          rm -rf docs/*
+          cp -r dist/puddledude/browser/* docs/
+
+      # 6. Add CNAME for custom domain
+      - name: Add CNAME
+        run: echo "www.puddledude.com" > docs/CNAME
+
+      # 7. Deploy to GitHub Pages (main branch / docs folder)
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v7
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+
